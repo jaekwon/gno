@@ -195,7 +195,10 @@ type Signature struct {
 	// SessionAddr identifies a session account for delegated signing.
 	// Zero-value means a master-key signature. When non-zero, the AnteHandler
 	// loads the session account at /a/<signer>/s/<SessionAddr> for verification.
-	// Amino binary and JSON both skip the field when the address is zero
-	// ([20]byte{}), so master-signed txs pay no wire-size overhead.
+	// Amino JSON skips the field when the address is zero ([20]byte{}); amino
+	// binary does not, because it judges a field empty by its MarshalAmino
+	// repr, and the zero address's repr is its bech32 string. So a master-key
+	// signature carries that string on the wire (42 bytes under the "g"
+	// prefix), and it decodes back to the zero address.
 	SessionAddr crypto.Address `json:"session_addr,omitempty" yaml:"session_addr,omitempty"`
 }

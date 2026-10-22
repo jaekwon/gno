@@ -137,3 +137,23 @@ func TestAminoSignatureSessionAddrRoundTrip(t *testing.T) {
 		})
 	}
 }
+
+// TestAminoSignatureZeroSessionAddrWire pins what a master-key signature
+// writes for its zero SessionAddr: amino JSON leaves session_addr out, while
+// amino binary writes field 3 as the zero address's bech32 string, since it
+// judges a field empty by its MarshalAmino repr. If either changes, update
+// SessionAddr's comment in doc.go with it.
+func TestAminoSignatureZeroSessionAddrWire(t *testing.T) {
+	t.Parallel()
+
+	zero := crypto.Address{}.String()
+
+	bz, err := amino.Marshal(std.Signature{})
+	require.NoError(t, err)
+	// Field 3, length-delimited (0x1a), then the string's length and bytes.
+	assert.Equal(t, append([]byte{0x1a, byte(len(zero))}, zero...), bz)
+
+	js, err := amino.MarshalJSON(std.Signature{})
+	require.NoError(t, err)
+	assert.NotContains(t, string(js), "session_addr")
+}
